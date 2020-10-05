@@ -1,16 +1,11 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
-import pygame,sys,random
+import pygame,sys,random,time
 
 pygame.init()
 pygame.mixer.pre_init(frequency = 44100, size = 16, channels = 1, buffer = 512)
 
 speed = 5
 game_run = False
+game_over = False
 win_width, win_height = 476,700
 window = pygame.display.set_mode((win_width, win_height))
 clock = pygame.time.Clock()
@@ -34,8 +29,8 @@ def move_pipes(pipes):
 
 def create_pipe():
     random_pos = random.choice([300,400,500,350,450])
-    top = flipped_pipe_surface.get_rect(midbottom = (int(win_height*1.2),random_pos-200))
-    bottom = pipe_surface.get_rect(midtop = (int(win_height*1.2),random_pos))
+    top = flipped_pipe_surface.get_rect(midbottom = (win_height+10,random_pos-200))
+    bottom = pipe_surface.get_rect(midtop = (win_height+10,random_pos))
     return top,bottom
 
 def draw_pipes(pipes):
@@ -53,7 +48,7 @@ def check_collision(pipes):
         if bird_rect.colliderect(pipe):
             hit_sound.play()
             return False
-        elif bird_rect.bottom >= (win_height-180) or bird_rect.top<=-12*speed:
+        elif bird_rect.bottom >= (win_height-100) or bird_rect.top<=-12*speed:
             die_sound.play()
             return False
     return True
@@ -75,9 +70,13 @@ def score_display():
 game_font = pygame.font.Font('04B_19.ttf',40)    
 bg_surface = pygame.image.load("images/background-day.png").convert()
 bg_surface = pygame.transform.scale(bg_surface,(win_width,win_height))
-gameover_surface = pygame.image.load("images/message.png").convert_alpha()
-gameover_surface = pygame.transform.scale(gameover_surface,(win_width,win_height))
-gameover_rect = gameover_surface.get_rect(center = (win_width//2,win_height//2))
+game_surface = pygame.image.load("images/message.png").convert_alpha()
+game_surface = pygame.transform.scale(game_surface,(win_width,win_height))
+game_rect = game_surface.get_rect(center = (win_width//2,win_height//2))
+
+gameover_surface = pygame.image.load("images/gameover.png").convert_alpha()
+gameover_surface = pygame.transform.scale(gameover_surface,(int(win_width/1.5),win_height//5))
+gameover_rect = gameover_surface.get_rect(center = (win_width//2,win_height//3))
 
 floor_surface = pygame.image.load("images/base.png").convert()
 floor_surface = pygame.transform.scale(floor_surface,(win_width,180))
@@ -120,18 +119,21 @@ while True:
             bird_surface,bird_rect = animation()
         if event.type == SWANPIPE:
             pipes.extend(create_pipe())
-        if event.type == pygame.KEYDOWN:
+        if event.type == pygame.KEYDOWN:  
             if event.key == pygame.K_SPACE and game_run:
                 bird_movement = 0
                 bird_movement -= 15
                 flap_sound.play()
-            elif event.key == pygame.K_SPACE:
+                game_over = True
+            elif event.key == pygame.K_SPACE and game_over:
+                game_over = False
+            elif event.key == pygame.K_SPACE and not game_over:
                 bird_movement = 0
                 score = 0
                 bird_rect.center = (100,450)
                 pipes.clear()
                 game_run = True
-    
+            
     
     window.blit(bg_surface,(0,0))
     if game_run:
@@ -146,17 +148,13 @@ while True:
         score_display()
         
     else:
-        window.blit(gameover_surface,gameover_rect)
+        if game_over:
+            window.blit(gameover_surface,gameover_rect)
+        else:
+            window.blit(game_surface,game_rect)
     draw_floor()
     floor_xpos-=speed
     if(floor_xpos<=-win_width):
         floor_xpos=0
     pygame.display.update()
     clock.tick(120)
-
-
-# In[ ]:
-
-
-
-
